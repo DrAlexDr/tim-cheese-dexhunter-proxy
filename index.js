@@ -1,13 +1,20 @@
 // $CHEESE Buy Webhook Bot (Only newest buy every poll)
 
 const axios = require("axios");
+const axiosRetry = require("axios-retry");
+require("dns").setDefaultResultOrder("ipv4first");
 
-const webhookUrl =
+// Retry config for Axios
+axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
+
+const webhookUrl = process.env.DISCORD_WEBHOOK_URL || 
   "https://discord.com/api/webhooks/1366777074240716820/4AgVndMunCqMlJBcc0i5Y4sZxVXkQGXzzq8BNraE3kacoFhqODhGtllVAnNgUJkk_mJA";
 let lastSeenTxHash = null;
 let initialized = false;
 
 async function fetchCheeseTrades() {
+  console.log("🔍 Fetching trades from DexHunter...");
+
   try {
     const response = await axios.post(
       "https://api-us.dexhunterv3.app/swap/ordersByPair",
@@ -32,7 +39,7 @@ async function fetchCheeseTrades() {
           Origin: "https://app.dexhunter.io",
           Referer: "https://app.dexhunter.io",
         },
-      },
+      }
     );
 
     const trades = response.data;
@@ -63,7 +70,7 @@ async function fetchCheeseTrades() {
     const adaUsed = trade.amount_in;
     const tx = trade.tx_hash;
     const timestamp = Math.floor(
-      new Date(trade.submission_time).getTime() / 1000,
+      new Date(trade.submission_time).getTime() / 1000
     );
 
     const payload = {
@@ -72,7 +79,9 @@ async function fetchCheeseTrades() {
         {
           title: "🧀💰 $CHEESE Buy Detected!",
           description: `👤 **Buyer:** \`${buyer.slice(0, 15)}...\`
-💸 **ADA Used:** \`${adaUsed} ₳\`\n🔗 [View TX](https://cardanoscan.io/transaction/${tx})\n🕒 <t:${timestamp}:R>`,
+💸 **ADA Used:** \`${adaUsed} ₳\`
+🔗 [View TX](https://cardanoscan.io/transaction/${tx})
+🕒 <t:${timestamp}:R>`,
           color: 0xffcc00,
           image: {
             url: "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExcW1wNzZlaXN0ZmsxcmlpY2JnNTlnNzhqd2lrNDltMTR4dmsyc2l5dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KY25pBl12eViX8tzdd/giphy.gif",
@@ -92,5 +101,6 @@ async function fetchCheeseTrades() {
   }
 }
 
-setInterval(fetchCheeseTrades, 5000);
-console.log("🧀 Tim Cheese Buy Bot (newest buy mode) running...");
+// Increase interval if needed to avoid rate limits
+setInterval(fetchCheeseTrades, 10000);
+console.log("🧀 Tim Cheese Buy Bot (enhanced) running...");
