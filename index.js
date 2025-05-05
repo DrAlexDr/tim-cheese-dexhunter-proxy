@@ -1,11 +1,11 @@
+
 // $CHEESE Buy Webhook Bot (Only newest buy every poll)
 
 const axios = require("axios");
-const axiosRetry = require("axios-retry");
-require("dns").setDefaultResultOrder("ipv4first");
+const axiosRetry = require("axios-retry").default;
 
-// Retry config for Axios
 axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
+require("dns").setDefaultResultOrder("ipv4first");
 
 const webhookUrl = process.env.DISCORD_WEBHOOK_URL || 
   "https://discord.com/api/webhooks/1366777074240716820/4AgVndMunCqMlJBcc0i5Y4sZxVXkQGXzzq8BNraE3kacoFhqODhGtllVAnNgUJkk_mJA";
@@ -73,8 +73,33 @@ async function fetchCheeseTrades() {
       new Date(trade.submission_time).getTime() / 1000
     );
 
+    const adaFloat = parseFloat(adaUsed);
+    if (adaFloat >= 500) {
+      const bigBuyPayload = {
+        username: "🧀 TIM CHEESE",
+        embeds: [
+          {
+            title: "🚨🧀 BIG $CHEESE BUY!",
+            description: `👤 **Buyer:** \`${buyer.slice(0, 15)}...\`
+💸 **ADA Used:** \`${adaUsed} ₳\`
+🔗 [View TX](https://cardanoscan.io/transaction/${tx})
+🕒 <t:${timestamp}:R>`,
+            color: 0xff0000,
+            image: {
+              url: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWh5bXFwdWppaGt3eGc0amhreGhubzk2dHFxcmhhbmsyZmwxNnFpYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GwCBRdRn3FB6DPSnoE/giphy.gif",
+            },
+            footer: {
+              text: "🧀 Tim Cheese Syndicate — Big Buyer Detected",
+            },
+          },
+        ],
+      };
+      const bigBuyWebhook = "https://discord.com/api/webhooks/1368726831813099590/lA8C8MsmRxmbgX_Nu9sV-Usd5Ftfhqr5faHkHPy6xVNnSnn0rQO9dVKphC_ftOUcrGyV";
+      await axios.post(bigBuyWebhook, bigBuyPayload);
+    }
+
     const payload = {
-      username: "🧀 Tim Cheese Buy Bot",
+      username: "🧀 TIM CHEESE",
       embeds: [
         {
           title: "🧀💰 $CHEESE Buy Detected!",
@@ -94,13 +119,12 @@ async function fetchCheeseTrades() {
     };
 
     await axios.post(webhookUrl, payload);
-    console.log(`✅ New TX posted: ${tx}`);
+    console.log(`✅ New TX posted: \${tx}`);
     lastSeenTxHash = tx;
   } catch (err) {
     console.error("❌ Error:", err.message);
   }
 }
 
-// Increase interval if needed to avoid rate limits
 setInterval(fetchCheeseTrades, 10000);
 console.log("🧀 Tim Cheese Buy Bot (enhanced) running...");
